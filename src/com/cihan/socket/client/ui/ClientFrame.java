@@ -2,20 +2,15 @@ package com.cihan.socket.client.ui;
 
 import javax.swing.JFrame;
 import javax.swing.JTextField;
-
-import com.cihan.socket.client.logic.IncomingReader;
 import com.sun.corba.se.pept.transport.ListenerThread;
-
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -167,38 +162,42 @@ public class ClientFrame extends JFrame{
 	        txtUserName.setEditable(true);
 
 	    }
-	     private void b_sendActionPerformed(java.awt.event.ActionEvent evt) {
-		        String nothing = "";
-		        if ((textClient.getText()).equals(nothing)) {
-		        	textClient.setText("");
-		        	textClient.requestFocus();
-		        } else {
-		            try {
-		               writer.println(username + ":" + textClient.getText() + ":" + "Chat");
-		               writer.flush(); // flushes the buffer
-		            } catch (Exception ex) {
-		            	textClient.append("Mesaj Gönderilemedi. \n");
-		            }
-		            textClient.setText("");
-		            textClient.requestFocus();
-		        }
+	    private void b_sendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_b_sendActionPerformed
+	        String nothing = "";
+	        if ((txtSend.getText()).equals(nothing)) {
+	            txtSend.setText("");
+	            txtSend.requestFocus();
+	        } else {
+	            try {
+	               writer.println(username + ":" + txtSend.getText() + ":" + "Chat");
+	               writer.flush(); // flushes the buffer
+	            } catch (Exception ex) {
+	            	textClient.append("Message was not sent. \n");
+	            }
+	            txtSend.setText("");
+	            txtSend.requestFocus();
+	        }
 
-		        textClient.setText("");
-		        textClient.requestFocus();
-		    }
+	        txtSend.setText("");
+	        txtSend.requestFocus();
+	    }
+
 	     
 	     private void b_connectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_b_connectActionPerformed
+	    
 	         if (isConnected == false) 
 	         {
 	             username = txtUserName.getText();
 	             txtUserName.setEditable(false);
-
+	            
 	             try 
-	             {
+	             {    
 	                 sock = new Socket(address, port);
+	                
 	                 InputStreamReader streamreader = new InputStreamReader(sock.getInputStream());
 	                 reader = new BufferedReader(streamreader);
 	                 writer = new PrintWriter(sock.getOutputStream());
+	                 
 	                 writer.println(username + ":has connected.:Connect");
 	                 writer.flush(); 
 	                 isConnected = true; 
@@ -216,5 +215,62 @@ public class ClientFrame extends JFrame{
 	        	 textClient.append("You are already connected. \n");
 	         }
 	     }//GEN-LAST:event_b_connectActionPerformed
+	     
+	     public class IncomingReader   implements Runnable{
+
+	    		@Override
+	    		public void run() {
+	    			String[] data;
+	    			String stream;
+	    			String done="Done";
+	    			String connect="Connect";
+	    			String disconnect ="Disconnect";
+	    			String chat="Chat";
+	    			try {
+	    				while((stream =reader.readLine())!=null)
+	    				{
+	    					data=stream.split(":");
+	    					if(data[2].equals(chat)) {
+	    						textClient.append(data[0] + " : "+data[1]+"\n");
+	    						textClient.setCaretPosition(textClient.getDocument().getLength());
+	    					}
+	    					else if(data[2].equals(connect))
+	    					{
+	    						textClient.removeAll();
+	    						userAdd(data[0]);
+	    					}
+	    					else if(data[2].equals(disconnect)) 
+	    					{
+	    						userRemove(data[0]);
+	    					}
+	    					else if(data[2].equals(done))
+	    					{
+	    						writeUser();
+	    						users.clear();
+	    					}
+	    				}
+	    			} catch (Exception e) {
+	    				
+	    			}
+	    		}
+
+	    		private void writeUser() {
+	    			String[] tempList = new String[users.size()];
+	    			users.toArray(tempList);
+	    			for (String token : tempList) {
+	    				textClient.append(token +"\n");
+	    			}
+	    			
+	    		}
+
+	    		private void userRemove(String data) {
+	    			textClient.append(data+" is OFFLINE .\n");
+	    		}
+
+	    		private void userAdd(String data) {
+	    			users.add(data);
+	    			
+	    		}
 	 
+}
 }
